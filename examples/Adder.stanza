@@ -1,0 +1,44 @@
+#include("chipper/src/use-chipper.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage adder :
+   import core
+   import verse
+   import chipper
+
+defmodule FullAdder :
+   input a: UInt<1>
+   input b: UInt<1>
+   input cin: UInt<1>
+   output sum: UInt<1>
+   output cout: UInt<1>
+
+   sum := a ^ b ^ cin
+   cout := (a & b) | (b & cin) | (a & cin)
+
+defmodule Adder (n:Int) :
+   input a: UInt<n>
+   input b: UInt<n>
+   input cin: UInt<1>
+   output sum: UInt<n>
+   output cout: UInt<1>
+
+   wire carry: UInt<1>[n + 1]
+   wire sums: UInt<1>[n]
+   for i in 0 to n do :
+      inst fa : FullAdder
+      fa.a := a[i]
+      fa.b := b[i]
+      fa.cin := carry[i]
+      carry[i + 1] := fa.cout
+      sums[i] := fa.sum
+
+   sum := reduce(cat, sums)
+   cout := carry[n]
+   
+defn main () :
+   circuit c : Adder(10)
+   println(c)
+
+main()

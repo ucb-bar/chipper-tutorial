@@ -1,0 +1,69 @@
+#include("chipper/src/use-chipper.stanza")
+#include("chipper/src/use-tester.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage dynamic-memory-search :
+   import core
+   import verse
+   import chipper
+   import tester
+
+defmodule DynamicMemorySearch (n:Int, w:Int) :
+  input  isWr:   UInt<1>
+  input  wrAddr: UInt<sizeof(w)>
+  input  isRd:   UInt<1>
+  input  data:   UInt<w>
+  output done:   UInt<1>
+  output rdAddr: UInt<sizeof(w)>
+
+  reg index = UInt<sizeof(w)>(0)
+  cmem vals: UInt<w>[n]
+  wire elt  = vals[index]
+  wire isDone = (! (isRd | isWr)) & ((elt === data) | (index === UInt(n - 1)))
+  when isWr :
+    vals[wrAddr] := data
+  else when isRd :
+    index := UInt(0)
+  else when ! isDone :
+    index := index + UInt(1)
+  done    := isDone
+  rdAddr  := index
+
+defn dynamic-memory-search-tests (n:Int, w:Int) :
+  with-tester [t, c] = DynamicMemorySearch(n, w) :
+    val elts = Array<Int>(n, 0)
+    for k in 0 to 16 all? :
+      ;; WRITE A WORD
+      poke(t, c.isRd, 0)
+      poke(t, c.isWr, 1)
+      val wrAddr = rand(n - 1)
+      val data   = rand((1 << w) - 1) + 1 ;; can't be 0
+      poke(t, c.wrAddr, wrAddr)
+      poke(t, c.data,   data)
+      step(t)
+      elts[wrAddr] = data
+      ;; SETUP SEARCH
+      val target = if k > 12: rand(1 << w) else: data
+      poke(t, c.isWr, 0)
+      poke(t, c.data, target)
+      poke(t, c.isRd, 1)
+      step(t)
+      rep loop () :
+        poke(t, c.isRd, 0)
+        step(t)
+        if peek(t, c.done) == 0: loop()
+      val addr = peek(t, c.rdAddr)
+      if contains?(elts, target) :
+        expect(elts[addr] == target, ["LOOKING FOR " target " FOUND " addr])
+      else :
+        expect(addr == (length(elts) - 1), ["LOOKING FOR " target " FOUND " addr])
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     dynamic-memory-search-tests(16, 8)
+   else :
+     circuit c : DynamicMemorySearch(16, 8)
+     println(c)
+   
+main(commandline-arguments())

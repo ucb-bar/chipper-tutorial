@@ -1,0 +1,36 @@
+#include("chipper/src/use-chipper.stanza")
+#include("chipper/src/use-tester.stanza")
+#include("chipper/src/stdlib.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage counter :
+   import core
+   import verse
+   import chipper
+   import stdlib with :
+     prefix => stdlib
+
+public defn wrapAround (n: UInt, max: UInt) -> UInt :
+  stdlib/mux(n > max, UInt(0), n)
+
+public defn counter (max: UInt, en: UInt, amt: UInt) -> UInt :
+  reg x = UInt<width(max)>(0)
+  when en : x := wrapAround(x + amt, max)
+  x
+
+defmodule Counter (max:Int) :
+  input inc: UInt<1>
+  input amt: UInt<sizeof(max)>
+  output tot: UInt<sizeof(max)>
+
+  tot := counter(UInt(max), inc, amt)
+  ;; reg x: UInt<sizeof(max)> x := UInt(0)
+  ;; when inc : x := wrapAround(x + amt, UInt(max))
+  ;; tot := x
+
+defn main () :
+   circuit c : Counter(16)
+   println(c)
+   
+main()

@@ -1,0 +1,39 @@
+#include("chipper/src/use-chipper.stanza")
+#include("chipper/src/use-tester.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage accumulator :
+   import core
+   import verse
+   import chipper
+   import tester
+
+defmodule Accumulator :
+  input in: UInt<1>
+  output out: UInt<8>
+  reg count = UInt<8>(0)
+
+  when in :
+    count := count + UInt(1)
+
+  out := count
+
+defn accumulator-tests () :
+  with-tester [t, c] = Accumulator() :
+    var tot = 0
+    for i in 0 to 16 all? :
+      val in = rand(2)
+      poke(t, c.in, in)
+      step(t)
+      if in == 1: tot = tot + 1
+      expect(t, c.out, tot)
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     accumulator-tests()
+   else :
+     circuit c : Accumulator
+     println(c)
+   
+main(commandline-arguments())

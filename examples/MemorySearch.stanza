@@ -1,0 +1,55 @@
+#include("chipper/src/use-chipper.stanza")
+#include("chipper/src/use-tester.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage memory-search :
+   import core
+   import verse
+   import chipper
+   import tester
+
+defmodule MemorySearch (inits:Streamable<Int>) :
+  input  isRd:   UInt<1>
+  input  data:   UInt<4>
+  output done:   UInt<1>
+  output rdAddr: UInt<3>
+
+  wire vals: UInt<4>[7]
+  for (e in inits, i in 0 to false) do:
+    vals[i] := UInt(e)
+  reg index : UInt<4>
+  wire elt    = vals[index]
+  wire isDone = (! isRd) & ((elt === data) | (index === UInt(7)))
+  when isRd :
+    index := UInt(0)
+  else when ! isDone :
+    index := index + UInt(1)
+  done    := isDone
+  rdAddr  := index
+
+defn memory-search-tests (elts:Array<Int>) :
+  with-tester [t, c] = MemorySearch(elts) :
+    val n = 8
+    val maxT = n * (length(elts) + 3)
+    for k in 0 to n all? :
+      val target = rand(16)
+      poke(t, c.isRd, 1)
+      poke(t, c.data, target)
+      step(t)
+      poke(t, c.isRd, 0)
+      rep loop () :
+        step(t)
+        if k < maxT and peek(t, c.done) == 0 : loop()
+      val addr = peek(t, c.rdAddr)
+      expect(addr == length(elts) or elts[addr] == target, 
+             ["LOOKING FOR " target " FOUND " addr])
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     memory-search-tests(to-array([0, 4, 15, 14, 2, 5, 13]))
+   else :
+     circuit c : MemorySearch([0, 4, 15, 14, 2, 5, 13])
+     println(c)
+   
+main(commandline-arguments())

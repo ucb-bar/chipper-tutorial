@@ -1,0 +1,48 @@
+#include("chipper/src/use-chipper.stanza")
+#include("chipper/src/use-tester.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage mul :
+   import core
+   import verse
+   import chipper
+   import tester
+
+defmodule Mul :
+  input x : UInt<4>
+  input y : UInt<4>
+  output z : UInt<8>
+  wire tab : UInt<8>[256]
+
+  ;; TODO: would like to do uint/cat here
+  for i in 0 to 16 do : 
+    for j in 0 to 16 do : 
+      tab[(i << 4) | j] := UInt(i * j)
+
+  z := tab[cat(x, y)]
+
+defn mul-tests () :
+  inst c : Mul
+  val maxInt  = 1 << 4
+
+defn mul-tests () :
+  with-tester [t, c] = Mul() :
+    val maxInt  = 1 << 4
+    val mask    = (maxInt - 1)
+    for i in 0 to 10 all? :
+      val x = rand(maxInt)
+      val y = rand(maxInt)
+      poke(t, c.x, x)
+      poke(t, c.y, y)
+      step(t)
+      expect(t, c.z, (x * y) & mask)
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     mul-tests()
+   else :
+    circuit c : Mul
+    println(c)
+   
+main(commandline-arguments())

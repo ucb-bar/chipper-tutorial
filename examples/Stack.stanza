@@ -1,0 +1,68 @@
+#include("chipper/src/use-chipper.stanza")
+#include("chipper/src/use-tester.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage stack :
+   import core
+   import verse
+   import chipper
+   import tester
+
+defmodule Stack (depth:Int) :
+  input push: UInt<1>
+  input pop: UInt<1>
+  input en: UInt<1>
+  input dataIn: UInt<32>
+  output dataOut: UInt<32>
+
+  cmem stack_mem : UInt<32>[depth]
+  reg sp : UInt<sizeof(depth)> sp := UInt(0)
+  wire out : UInt<32> out := UInt(0)
+
+  when en :
+    when push & (sp < UInt(depth)) :
+      stack_mem[sp] := dataIn
+      sp := sp + UInt(1)
+    else when pop & (sp > UInt(0)) :
+      sp := sp - UInt(1)
+    when sp > UInt(0) :
+      out := stack_mem[sp - UInt(1)]
+  dataOut := out
+
+defn stack-tests (depth:Int) :
+  with-tester [t, c] = Stack(depth) :
+    var nxtDataOut = 0
+    var dataOut = 0
+    val stack = Vector<Int>()
+
+    for k in 0 to 16 all? :
+      val enable  = rand(2)
+      val pushx   = rand(2)
+      val popx    = rand(2)
+      val dataIn  = rand(256)
+
+      if enable == 1 :
+        dataOut = nxtDataOut
+        if pushx == 1 and length(stack) < depth :
+          add(stack, dataIn)
+        else if pop == 1 and length(stack) > 0 :
+          pop(stack)
+        if length(stack) > 0 :
+          nxtDataOut = peek(stack)
+
+      poke(t, c.pop,    popx)
+      poke(t, c.push,   pushx)
+      poke(t, c.en,     enable)
+      poke(t, c.dataIn, dataIn)
+      step(t)
+      expect(t, c.dataOut, dataOut)
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     stack-tests(16)
+   else :
+     circuit c : Stack(16)
+     println(c)
+   
+main(commandline-arguments())

@@ -1,0 +1,41 @@
+#include("chipper/src/use-chipper.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage alu :
+   import core
+   import verse
+   import chipper
+
+defmodule BasicALU :
+   input a: UInt<4>
+   input b: UInt<4>
+   input opcode: UInt<4>
+   output output: UInt<4>
+
+   when opcode === UInt(0) :
+      output := a
+   else when opcode === UInt(1) :
+      output := b
+   else when opcode === UInt(2) :
+      output := a + UInt(1)
+   else when opcode === UInt(3) :
+      output := a - UInt(1)
+   else when opcode === UInt(4) :
+      output := a + UInt(4)
+   else when opcode === UInt(5) :
+      output := a - UInt(4)
+   else when opcode === UInt(6) :
+      output := a + b
+   else when opcode === UInt(7) :
+      output := a - b
+   else when opcode === UInt(8) :
+      output := a < b
+   else :
+      output := a === b
+   
+defn main () :
+   circuit c : BasicALU
+   println(c)
+
+main()

@@ -1,0 +1,3 @@
+[submodule "chipper"]
+	path = chipper
+	url = git@github.com:ucb-bar/chipper.git
