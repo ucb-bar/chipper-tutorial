@@ -38,8 +38,6 @@ generated_suffixes := .fir .flo .h .o .out
 generated_suffixes_lib := .cpp .o .so
 generated_files := $(foreach sfx,$(generated_suffixes),$(addsuffix $(sfx),$(units))) $(units) $(foreach sfx,$(generated_suffixes_lib),$(addsuffix $(sfx),$(addprefix lib,$(units))))
 
-# Generate the rule to make something in the object directory
-
 tut_outs    := $(addsuffix .out, $(executables))
 tut_firs    := $(addsuffix .fir, $(executables))
 
@@ -89,7 +87,7 @@ compile smoke: firs
 
 check:	outs
 
-.PHONY: all check clean outs firs smoke
+.PHONY: all check clean outs firs smoke verilog
 
 # Last resort target. The first dependency will be the object directory,
 # but only if it doesn't already exist.
