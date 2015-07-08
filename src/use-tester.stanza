@@ -1,0 +1,3 @@
+#include("../chipper/src/tester.stanza")
+#include("../chipper/src/dl-lslib.lstanza")
+#link("../chipper/src/loader.c")
