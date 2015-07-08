@@ -57,7 +57,7 @@ outs: $(tut_outs)
 verilog: $(addsuffix .v, $(executables))
 
 $(objdir)/%.out: $(objdir)/%
-	set -e -o pipefail; cd $(objdir) && $(<F) --testing | tee $(@F)
+	set -e -o pipefail; cd $(objdir) && ./$(<F) --testing | tee $(@F)
 
 $(objdir)/lib%.so:	$(objdir)/lib%.o $(objdir)/%.o
 	cd $(objdir) && $(clang) -shared -o $(@F) -fPIC $(<F) `echo $(basename $(@F)) | sed -e s/lib//`.o
@@ -76,6 +76,9 @@ $(objdir)/%.flo:	$(objdir)/%.fir
 	cd $(objdir) && $(firrtl) -i $(<F) -o $(@F).tmp -X flo
 	cd $(objdir) && $(filter) < $(@F).tmp > $(@F)
 
+$(objdir)/%.v:	$(objdir)/%.fir
+	cd $(objdir) && $(firrtl) -i $(<F) -o $(@F) -X verilog
+
 $(objdir)/%.fir:	$(objdir)/%
 	$< > $@
 
@@ -91,7 +94,7 @@ compile smoke: firs
 # The dummy recipe seems to be required for Ubuntu versions of Make,
 # otherwise it complains about not being able to make the target.
 %: $(filter-out $(wildcard $objdir),$(objdir)) $(objdir)/%
-	@/bin/true
+	@true
 
 .PRECIOUS:	$(executables) $(sos)
 
