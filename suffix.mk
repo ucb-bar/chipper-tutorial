@@ -87,11 +87,13 @@ $(objdir)/%: %.stanza
 
 compile smoke: firs
 
+check:	outs
+
 .PHONY: all check clean outs firs smoke
 
 # Last resort target. The first dependency will be the object directory,
 # but only if it doesn't already exist.
-# The dummy recipe seems to be required for Ubuntu versions of Make,
+# The dummy recipe seems to be required for Yosemite versions of Make,
 # otherwise it complains about not being able to make the target.
 %: $(filter-out $(wildcard $objdir),$(objdir)) $(objdir)/%
 	@true
