@@ -78,6 +78,7 @@ compile smoke: firs
 # Last resort target. The first dependency will be the object directory,
 # but only if it doesn't already exist.
 %: $(filter-out $(wildcard $objdir),$(objdir)) $(objdir)/%
+	echo tried to make $@
 
 .PRECIOUS:	$(executables)
 
