@@ -23,10 +23,6 @@ defmodule Mul :
   z := tab[cat(x, y)]
 
 defn mul-tests () :
-  inst c : Mul
-  val maxInt  = 1 << 4
-
-defn mul-tests () :
   with-tester [t, c] = Mul() :
     val maxInt  = 1 << 4
     val mask    = (maxInt - 1)

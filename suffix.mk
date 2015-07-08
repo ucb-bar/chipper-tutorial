@@ -34,7 +34,7 @@ units := $(filter-out none,\
 executables := $(addprefix $(objdir)/,$(units))
 sos := $(addsuffix .so,$(addprefix $(objdir)/lib,$(units)))
 
-generated_suffixes := .fir .flo .h .o .out
+generated_suffixes := .fir .flo .h .o .out .stdin .vcd
 generated_suffixes_lib := .cpp .o .so
 generated_files := $(foreach sfx,$(generated_suffixes),$(addsuffix $(sfx),$(units))) $(units) $(foreach sfx,$(generated_suffixes_lib),$(addsuffix $(sfx),$(addprefix lib,$(units))))
 
@@ -54,7 +54,7 @@ outs: $(tut_outs)
 
 verilog: $(addsuffix .v, $(executables))
 
-$(objdir)/%.out: $(objdir)/%
+$(objdir)/%.out: $(objdir)/% $(objdir)/lib%.so
 	set -e -o pipefail; cd $(objdir) && ./$(<F) --testing | tee $(@F)
 
 $(objdir)/lib%.so:	$(objdir)/lib%.o $(objdir)/%.o
@@ -72,7 +72,7 @@ $(objdir)/%.o:	$(objdir)/%.flo
 
 $(objdir)/%.flo:	$(objdir)/%.fir
 	cd $(objdir) && $(firrtl) -i $(<F) -o $(@F).tmp -X flo
-	cd $(objdir) && $(filter) < $(@F).tmp > $(@F)
+	cd $(objdir) && $(filter) < $(@F).tmp > $(@F) && $(RM) $(@F).tmp
 
 $(objdir)/%.v:	$(objdir)/%.fir
 	cd $(objdir) && $(firrtl) -i $(<F) -o $(@F) -X verilog
@@ -96,7 +96,8 @@ check:	outs
 %: $(filter-out $(wildcard $objdir),$(objdir)) $(objdir)/%
 	@true
 
-.PRECIOUS:	$(executables) $(sos)
+# Retain all intermediate files.
+.SECONDARY:
 
 # Optimization - Don't try seeing if these have dependencies and need to be regenerated.
 Makefile : ;

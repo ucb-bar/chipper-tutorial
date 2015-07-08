@@ -30,7 +30,7 @@ verilog_SUB_DIRS := $(TUT_SUB_DIRS)
 # 	make smoke clean
 define GenSubDirTarget
 $(1).$(2):
-	$(MAKE) -C $(2) $(1)
+	$(MAKE) $(MFLAGS) -C $(2) $(1)
 
 # Indicate this is a dummy target
 .PHONY:	$(1).$(2)
@@ -52,7 +52,7 @@ $(foreach t,$(SUB_DIR_TARGETS),$(eval $(call GenSubDirTargets,$t)))
 
 # Generate the generic "make default in sub-directory".
 $(ALL_SUB_DIRS):
-	$(MAKE) -C $@
+	$(MAKE) $(MFLAGS) -C $@
 
 # GenSubDirTargets generates a dependency:
 # check: $(_checkers)
