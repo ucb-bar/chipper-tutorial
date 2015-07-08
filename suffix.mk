@@ -82,6 +82,8 @@ compile smoke: firs
 %: $(objdir)/%
 	echo tried to make $@
 
+.PRECIOUS:	$(executables)
+
 # Optimization - Don't try seeing if these have dependencies and need to be regenerated.
 Makefile : ;
 %.mk :: ;
