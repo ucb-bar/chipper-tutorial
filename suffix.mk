@@ -8,7 +8,7 @@ component ?= $(notdir $(patsubst %/,%,$(curdir)))
 # Directory containing src
 srcdir      ?= $(top_srcdir)/$(component)
 # Directory containing executables
-bindir	  ?= $(top_srcdir)/chipper/bin
+bindir	  ?= $(abspath $(top_srcdir)/chipper/bin)
 # Directory below which we'll create all generated files.
 objdir	?= $(abspath $(top_srcdir)/generated/$(component))
 
@@ -19,8 +19,8 @@ $(objdir):
 chipper	?= $(bindir)/chipper
 filter	?= $(bindir)/filter
 firrtl	?= $(bindir)/firrtl
-gen_harness ?= $(bindor)/gen-harness
-flow_llvm ?= flow-llvm
+genharness ?= $(bindir)/gen-harness
+flollvm ?= flo-llvm
 
 clang	?= clang++
 
@@ -55,14 +55,14 @@ $(objdir)/%.out: $(objdir)/% $(objdir)/%.fir
 $(objdir)/lib%.so:	$(objdir)/lib%.o $(objdir)/%.o
 	cd $(objdir) && $(clang) -shared -o $(@F) -fPIC $(<F) $(patsub lib%.so,%,$(@F))
 
-$(objdir)/lib%.o:	$(objdir)/lib%1.cpp
+$(objdir)/lib%.o:	$(objdir)/lib%.cpp
 	cd $(objdir) && $(clang) -c -fPIC $(<F) -o $(@F)
 
-$(objdir)/lib%1.cpp:	$(objdir)/%.flo
-	cd $(objdir) && $(gen-harness) $(<F) > $(@F)
+$(objdir)/lib%.cpp:	$(objdir)/%.flo
+	cd $(objdir) && $(genharness) $(patsub %.flo,%,$(<F)) > $(@F)
 
 $(objdir)/%.o:	$(objdir)/%.flo
-	cd $(objdir) && $(flo-llvm) --vcdtmp $(<F)
+	cd $(objdir) && $(flollvm) --vcdtmp $(<F)
 
 
 $(objdir)/%.flo:	$(objdir)/%.fir

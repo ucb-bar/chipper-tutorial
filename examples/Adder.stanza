@@ -1,4 +1,4 @@
-#include("chipper/src/use-chipper.stanza")
+#include("../src/use-chipper.stanza")
 
 #use-syntax(core, chipper)
 
