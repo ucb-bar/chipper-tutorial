@@ -12,10 +12,6 @@ bindir	  ?= $(abspath $(top_srcdir)/chipper/bin)
 # Directory below which we'll create all generated files.
 objdir	?= $(abspath $(top_srcdir)/generated/$(component))
 
-# If we don't have an output directory, here is the rule to make it.
-$(objdir):
-	mkdir -p $@
-
 chipper	?= $(bindir)/chipper
 filter	?= $(bindir)/filter
 firrtl	?= $(bindir)/firrtl
@@ -79,11 +75,16 @@ compile smoke: firs
 
 .PHONY: all check clean outs firs smoke
 
-%: $(objdir)/%
-	echo tried to make $@
+# Last resort target. The first dependency will be the object directory,
+# but only if it doesn't already exist.
+%: $(filter-out $(wildcard $objdir),$(objdir)) $(objdir)/%
 
 .PRECIOUS:	$(executables)
 
 # Optimization - Don't try seeing if these have dependencies and need to be regenerated.
 Makefile : ;
 %.mk :: ;
+
+# If we don't have an output directory, here is the rule to make it.
+$(objdir):
+	mkdir -p $@
