@@ -18,7 +18,7 @@ firrtl	?= $(bindir)/firrtl
 genharness ?= $(bindir)/gen-harness
 flollvm ?= flo-llvm
 
-clang	?= clang++
+clang	?= g++
 
 # Don't expect reasonable output from all *.stanza files.
 # Currently, all .stanza files are okay so we use a dummy 'none'.
@@ -26,6 +26,9 @@ units := $(filter-out none,\
             $(notdir $(basename $(wildcard $(srcdir)/*.stanza))))
 
 executables := $(addprefix $(objdir)/,$(units))
+sos := $(addsuffix .so,$(addprefix $(objdir)/lib,$(units)))
+
+$(info $(sos))
 
 # Generate the rule to make something in the object directory
 
@@ -49,16 +52,16 @@ $(objdir)/%.out: $(objdir)/% $(objdir)/%.fir
 	echo $(chipper) or something
 
 $(objdir)/lib%.so:	$(objdir)/lib%.o $(objdir)/%.o
-	cd $(objdir) && $(clang) -shared -o $(@F) -fPIC $(<F) $(patsub lib%.so,%,$(@F))
+	cd $(objdir) && $(clang) -shared -o $(@F) -fPIC $(<F) `echo $(basename $(@F)) | sed -e s/lib//`.o
 
 $(objdir)/lib%.o:	$(objdir)/lib%.cpp
 	cd $(objdir) && $(clang) -c -fPIC $(<F) -o $(@F)
 
-$(objdir)/lib%.cpp:	$(objdir)/%.flo
-	cd $(objdir) && $(genharness) $(patsub %.flo,%,$(<F)) > $(@F)
+$(objdir)/lib%.cpp:	$(objdir)/%.flo $(objdir)/%.o
+	cd $(objdir) && $(genharness) $(basename $(<F)) > $(@F)
 
 $(objdir)/%.o:	$(objdir)/%.flo
-	cd $(objdir) && $(flollvm) --vcdtmp $(<F)
+	cd $(objdir) && $(flollvm) $(<F) #  --vcdtmp
 
 
 $(objdir)/%.flo:	$(objdir)/%.fir
@@ -80,7 +83,7 @@ compile smoke: firs
 %: $(filter-out $(wildcard $objdir),$(objdir)) $(objdir)/%
 	echo tried to make $@
 
-.PRECIOUS:	$(executables)
+.PRECIOUS:	$(executables) $(sos)
 
 # Optimization - Don't try seeing if these have dependencies and need to be regenerated.
 Makefile : ;
