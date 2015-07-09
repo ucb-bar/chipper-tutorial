@@ -67,7 +67,7 @@ $(objdir)/lib%.cpp:	$(objdir)/%.flo $(objdir)/%.o
 	cd $(objdir) && $(genharness) $(basename $(<F)) > $(@F)
 
 $(objdir)/%.o:	$(objdir)/%.flo
-	cd $(objdir) && $(flollvm) $(<F) #  --vcdtmp
+	cd $(objdir) && $(flollvm) --pic $(<F) #  --vcdtmp
 
 
 $(objdir)/%.flo:	$(objdir)/%.fir
