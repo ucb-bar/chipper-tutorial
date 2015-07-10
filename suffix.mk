@@ -34,7 +34,7 @@ units := $(filter-out none,\
 executables := $(addprefix $(objdir)/,$(units))
 sos := $(addsuffix .so,$(addprefix $(objdir)/lib,$(units)))
 
-generated_suffixes := .fir .flo .h .o .out .stdin .vcd
+generated_suffixes := .fir .flo .h .o .out .stdin .vcd .v
 generated_suffixes_lib := .cpp .o .so
 generated_files := $(foreach sfx,$(generated_suffixes),$(addsuffix $(sfx),$(units))) $(units) $(foreach sfx,$(generated_suffixes_lib),$(addsuffix $(sfx),$(addprefix lib,$(units))))
 
