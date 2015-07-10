@@ -26,6 +26,7 @@ defmodule Adder (n:Int) :
 
    wire carry: UInt<1>[n + 1]
    wire sums: UInt<1>[n]
+   carry[0] := cin
    for i in 0 to n do :
       inst fa : FullAdder
       fa.a := a[i]
@@ -38,7 +39,7 @@ defmodule Adder (n:Int) :
    cout := carry[n]
    
 defn main () :
-   circuit c : Adder(10)
+   circuit c : Adder(2)
    println(c)
 
 main()
