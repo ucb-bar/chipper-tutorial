@@ -10,27 +10,47 @@ defpackage counter :
    import chipper
    import stdlib with :
      prefix => stdlib
+   import tester
 
 public defn wrapAround (n: UInt, max: UInt) -> UInt :
   stdlib/mux(n > max, UInt(0), n)
 
+;; MODIFY THIS FUNCTION TO INCREMENT BY THE AMT
+;; ONLY WHEN EN IS ASSERTED
+
 public defn counter (max: UInt, en: UInt, amt: UInt) -> UInt :
   reg x = UInt<width(max)>(0)
-  when en : x := wrapAround(x + amt, max)
+  x := wrapAround(x + amt, max)
   x
 
 defmodule Counter (max:Int) :
-  input inc: UInt<1>
-  input amt: UInt<sizeof(max)>
+  input  inc: UInt<1>
+  input  amt: UInt<sizeof(max)>
   output tot: UInt<sizeof(max)>
 
   tot := counter(UInt(max), inc, amt)
-  ;; reg x: UInt<sizeof(max)> x := UInt(0)
-  ;; when inc : x := wrapAround(x + amt, UInt(max))
-  ;; tot := x
 
-defn main () :
-   circuit c : Counter(16)
-   println(c)
+defn counter-tests (max:Int) :
+  with-tester [t, c] = Counter(max) :
+    var tot = 0
+    defn int-wrap-around (n:Int, mx:Int) :
+      if n > mx: 0 else: n
+    for k in 0 to 32 all? :
+      val inc = rand(2)
+      val amt = rand(max)
+      poke(t, c.inc, inc)
+      poke(t, c.amt, amt)
+      if inc == 1:
+        tot = int-wrap-around(tot + amt, max)
+      step(t)
+      expect(t, c.tot, tot)
+
+defn main (args) :
+   val max = 16
+   if length(args) > 1 and args[1] == "--testing" :
+     counter-tests(max)
+   else :
+     circuit c : Counter(max)
+     println(c)
    
-main()
+main(commandline-arguments())

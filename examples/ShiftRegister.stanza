@@ -32,6 +32,7 @@ defn shift-register-tests (w:Int, num:Int) :
     val r   = Array<Int>(4, 0)
     val ins = Array<Int>(4, 0)
     for n in 0 to 16 all? :
+      println-all(["N = " n])
       for i in 0 to 4 do :
         ins[i] = rand(16)
       val shift = rand(2)
@@ -46,13 +47,14 @@ defn shift-register-tests (w:Int, num:Int) :
           r[i] = ins[i]
       else if shift == 1 :
         for i in 3 to 1 by -1 do :
-          r[i] = r[i - 1]
+          r[i - 1] = r[i]
         r[0] = ins[0]
       expect(t, c.out, r[3])
 
 defn main (args) :
    if length(args) > 1 and args[1] == "--testing" :
-     shift-register-tests(4, 4)
+     println("RUNNING TESTS")
+     if shift-register-tests(4, 4): 0 else: -1
    else :
      circuit c : ShiftRegister(4,4)
      println(c)

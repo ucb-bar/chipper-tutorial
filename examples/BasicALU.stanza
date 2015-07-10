@@ -1,4 +1,5 @@
 #include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
 
 #use-syntax(core, chipper)
 
@@ -6,36 +7,78 @@ defpackage alu :
    import core
    import verse
    import chipper
+   import tester
 
 defmodule BasicALU :
    input a: UInt<4>
    input b: UInt<4>
    input opcode: UInt<4>
-   output output: UInt<4>
+   output out: UInt<4>
 
+   out := UInt(0)
    when opcode === UInt(0) :
-      output := a
+      out := a
    else when opcode === UInt(1) :
-      output := b
+      out := b
    else when opcode === UInt(2) :
-      output := a + UInt(1)
+      out := a + UInt(1)
    else when opcode === UInt(3) :
-      output := a - UInt(1)
+      out := a - UInt(1)
    else when opcode === UInt(4) :
-      output := a + UInt(4)
+      out := a + UInt(4)
    else when opcode === UInt(5) :
-      output := a - UInt(4)
+      out := a - UInt(4)
    else when opcode === UInt(6) :
-      output := a + b
+      out := a + b
    else when opcode === UInt(7) :
-      output := a - b
+      out := a - b
    else when opcode === UInt(8) :
-      output := a < b
+      out := a < b
    else :
-      output := a === b
+      out := a === b
    
-defn main () :
-   circuit c : BasicALU
-   println(c)
+defn basic-alu-tests () :
+  with-tester [t, c] = BasicALU() :
+    for k in 0 to 16 all? :
+      val mx   = 1 << 4
+      val mask = mx - 1
+      val a    = rand(mx)
+      val b    = rand(mx)
+      val op   = rand(16)
 
-main()
+      poke(t, c.a, a)
+      poke(t, c.b, b)
+      poke(t, c.opcode, op)
+      var res = 0
+      if op == 0 :
+         res = a
+      else if op == 1 :
+         res = b
+      else if op == 2 :
+         res = a + 1
+      else if op == 3 :
+         res = a - 1
+      else if op == 4 :
+         res = a + 4
+      else if op == 5 :
+         res = a - 4
+      else if op == 6 :
+         res = a + b
+      else if op == 7 :
+         res = a - b
+      else if op == 8 :
+         res = int(a < b)
+      else :
+         res = int(a == b)
+      res = res & mask         
+      step(t)
+      expect(t, c.out, res)
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     basic-alu-tests()
+   else :
+     circuit c : BasicALU()
+     println(c)
+   
+main(commandline-arguments())

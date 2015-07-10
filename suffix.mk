@@ -73,6 +73,7 @@ $(objdir)/%.o:	$(objdir)/%.flo
 $(objdir)/%.flo:	$(objdir)/%.fir
 	cd $(objdir) && $(firrtl) -i $(<F) -o $(@F).tmp -X flo
 	cd $(objdir) && $(filter) < $(@F).tmp > $(@F) && $(RM) $(@F).tmp
+	# cd $(objdir) && cp $(@F).tmp $(@F) && $(RM) $(@F).tmp
 
 $(objdir)/%.v:	$(objdir)/%.fir
 	cd $(objdir) && $(firrtl) -i $(<F) -o $(@F) -X verilog

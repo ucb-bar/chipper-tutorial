@@ -7,19 +7,34 @@ defpackage lfsr16 :
    import core
    import verse
    import chipper
+   import tester
 
 defmodule LFSR16 :
   input inc : UInt<1>
   output out : UInt<16>
-  reg res : UInt<16>
-  ;; when reset: 
+  reg res = UInt<16>(1)
   when inc :
     wire nxt_res = cat(res[0] ^ res[2] ^ res[3] ^ res[5], res[15,1]) 
     res := nxt_res
   out := res
 
-defn main () :
-   circuit c : LFSR16()
-   println(c)
+defn lfsr16-tests () :
+  with-tester [t, c] = LFSR16() :
+    var res = 1
+    for k in 0 to 16 all? :
+      val inc = rand(2)
+      poke(t, c.inc, inc)
+      step(t)
+      if inc == 1:
+        val bit = ((res >> 0) ^ (res >> 2) ^ (res >> 3) ^ (res >> 5) ) & 1
+        res = (res >> 1) | (bit << 15)
+      expect(t, c.out, res)
 
-main()
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     lfsr16-tests()
+   else :
+     circuit c : LFSR16()
+     println(c)
+   
+main(commandline-arguments())

@@ -15,7 +15,6 @@ defmodule Mul :
   output z : UInt<8>
   wire tab : UInt<8>[256]
 
-  ;; TODO: would like to do uint/cat here
   for i in 0 to 16 do : 
     for j in 0 to 16 do : 
       tab[(i << 4) | j] := UInt(i * j)
@@ -32,7 +31,7 @@ defn mul-tests () :
       poke(t, c.x, x)
       poke(t, c.y, y)
       step(t)
-      expect(t, c.z, (x * y) & mask)
+      expect(t, c.z, x * y)
 
 defn main (args) :
    if length(args) > 1 and args[1] == "--testing" :

@@ -14,9 +14,8 @@ defmodule Accumulator :
   output out: UInt<8>
   reg count = UInt<8>(0)
 
-  when in :
-    count := count + UInt(1)
-
+  ;; FILL IN HERE
+  
   out := count
 
 defn accumulator-tests () :

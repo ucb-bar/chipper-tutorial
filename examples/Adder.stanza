@@ -1,4 +1,5 @@
 #include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
 
 #use-syntax(core, chipper)
 
@@ -6,6 +7,7 @@ defpackage adder :
    import core
    import verse
    import chipper
+   import tester
 
 defmodule FullAdder :
    input a: UInt<1>
@@ -38,8 +40,27 @@ defmodule Adder (n:Int) :
    sum := reduce(cat, sums)
    cout := carry[n]
    
-defn main () :
-   circuit c : Adder(2)
-   println(c)
+defn adder-tests (n:Int) :
+  with-tester [t, c] = Adder(n) :
+    for k in 0 to 16 all? :
+      val mx   = 1 << n
+      val mask = mx - 1
+      val a    = rand(mx)
+      val b    = rand(mx)
 
-main()
+      poke(t, c.a, a)
+      poke(t, c.b, b)
+      val sum = a + b
+      step(t)
+      expect(t, c.sum,  sum & mask)
+      expect(t, c.cout, sum >> n)
+
+defn main (args) :
+   val n = 8
+   if length(args) > 1 and args[1] == "--testing" :
+     adder-tests(n)
+   else :
+     circuit c : Adder(n)
+     println(c)
+   
+main(commandline-arguments())

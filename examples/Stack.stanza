@@ -17,11 +17,11 @@ defmodule Stack (depth:Int) :
   output dataOut: UInt<32>
 
   cmem stack_mem : UInt<32>[depth]
-  reg sp : UInt<sizeof(depth)> sp := UInt(0)
-  wire out : UInt<32> out := UInt(0)
+  reg sp = UInt<sizeof(depth)>(0)
+  reg out = UInt<32>(0)
 
   when en :
-    when push & (sp < UInt(depth)) :
+    when push & ((sp + UInt(1)) < UInt(depth)) :
       stack_mem[sp] := dataIn
       sp := sp + UInt(1)
     else when pop & (sp > UInt(0)) :
@@ -32,7 +32,6 @@ defmodule Stack (depth:Int) :
 
 defn stack-tests (depth:Int) :
   with-tester [t, c] = Stack(depth) :
-    var nxtDataOut = 0
     var dataOut = 0
     val stack = Vector<Int>()
 
@@ -43,13 +42,12 @@ defn stack-tests (depth:Int) :
       val dataIn  = rand(256)
 
       if enable == 1 :
-        dataOut = nxtDataOut
+        if length(stack) > 0 :
+          dataOut = peek(stack)
         if pushx == 1 and length(stack) < depth :
           add(stack, dataIn)
-        else if pop == 1 and length(stack) > 0 :
+        else if popx == 1 and length(stack) > 0 :
           pop(stack)
-        if length(stack) > 0 :
-          nxtDataOut = peek(stack)
 
       poke(t, c.pop,    popx)
       poke(t, c.push,   pushx)

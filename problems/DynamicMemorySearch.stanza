@@ -18,12 +18,11 @@ defmodule DynamicMemorySearch (n:Int, w:Int) :
   output rdAddr: UInt<sizeof(w)>
 
   reg index = UInt<sizeof(w)>(0)
-  cmem vals: UInt<w>[n]
-  wire elt  = vals[index]
+  ;; DEFINE MEM HERE
+  wire elt  = UInt(0)
   wire isDone = (! (isRd | isWr)) & ((elt === data) | (index === UInt(n - 1)))
-  when isWr :
-    vals[wrAddr] := data
-  else when isRd :
+  ;; FILL IN HERE
+  when isRd :
     index := UInt(0)
   else when ! isDone :
     index := index + UInt(1)
