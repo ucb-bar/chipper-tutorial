@@ -9,54 +9,41 @@ defpackage shift-register :
    import chipper
    import tester
 
-defmodule ShiftRegister (w:Int, num:Int) :
-  input ins: UInt<w>[num]
-  input load: UInt<1>
-  input shift: UInt<1>
-  output out: UInt<w>
+defmodule ShiftRegister :
+  input  in:  UInt<8>
+  output out: UInt<8>
 
-  reg delays: UInt<w>[num]
-  ;; when reset :
-  ;; delays := 0
-  when load :
-    for i in 0 to num do :
-      delays[i] := ins[i]
-  else when shift :
-    delays[0] := ins[0]
-    for i in 1 to num do :
-      delays[i - 1] := delays[i]
-  out := delays[num - 1]    
+  reg r0 : UInt<8>
+  reg r1 : UInt<8>
+  reg r2 : UInt<8>
+  reg r3 : UInt<8>
+  r0 := in
+  r1 := r0
+  r2 := r1
+  r3 := r2
+  out := r3
 
-defn shift-register-tests (w:Int, num:Int) :
-  with-tester [t, c] = ShiftRegister(w,num) :
-    val r   = Array<Int>(4, 0)
-    val ins = Array<Int>(4, 0)
-    for n in 0 to 16 all? :
-      println-all(["N = " n])
-      for i in 0 to 4 do :
-        ins[i] = rand(16)
-      val shift = rand(2)
-      val load  = rand(2)
-      for i in 0 to 4 do :
-        poke(t, c.ins[i], ins[i])
-      poke(t, c.load,  load)
-      poke(t, c.shift, shift)
+defn shift-register-tests () :
+  with-tester [t, c] = ShiftRegister() :
+    val r = Array<Int>(4, 0)
+    ;; shift in zeroes to initialize
+    for k in 0 to 4 do :
+      poke(t, c.in, 0)
       step(t)
-      if load == 1 :
-        for i in 0 to 4 do :
-          r[i] = ins[i]
-      else if shift == 1 :
-        for i in 3 to 1 by -1 do :
-          r[i - 1] = r[i]
-        r[0] = ins[0]
+    for n in 0 to 16 all? :
+      val in = rand(256)
+      poke(t, c.in, in)
+      step(t)
+      for i in 3 to 0 by -1 do :
+        r[i] = r[i - 1]
+      r[0] = in
       expect(t, c.out, r[3])
 
 defn main (args) :
    if length(args) > 1 and args[1] == "--testing" :
-     println("RUNNING TESTS")
-     if shift-register-tests(4, 4): 0 else: -1
+     if shift-register-tests(): 0 else: -1
    else :
-     circuit c : ShiftRegister(4,4)
+     circuit c : ShiftRegister
      println(c)
    
 main(commandline-arguments())

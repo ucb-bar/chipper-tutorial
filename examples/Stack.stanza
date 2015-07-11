@@ -10,10 +10,10 @@ defpackage stack :
    import tester
 
 defmodule Stack (depth:Int) :
-  input push: UInt<1>
-  input pop: UInt<1>
-  input en: UInt<1>
-  input dataIn: UInt<32>
+  input  push:    UInt<1>
+  input  pop:     UInt<1>
+  input  en:      UInt<1>
+  input  dataIn:  UInt<32>
   output dataOut: UInt<32>
 
   cmem stack_mem : UInt<32>[depth]

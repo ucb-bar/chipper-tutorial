@@ -1,0 +1,34 @@
+#include("src/use-chipper.stanza")
+#include("src/stdlib.stanza")
+#include("src/decoupled.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage gcd :
+   import core
+   import verse
+   import chipper
+   import stdlib
+   import decoupled
+
+defmodule DecoupledGCD :
+   input  a: DecoupledIO<UInt<16>>
+   input  b: DecoupledIO<UInt<16>>
+   output z: DecoupledIO<UInt<16>>
+
+   reg computing? = UInt(false)
+   reg x: UInt<16>
+   reg y: UInt<16>
+
+   a.ready := ! computing?
+   b.ready := ! computing?
+   z.bits  := UInt(0)
+   z.valid := UInt(false)
+
+   ;; FILL THIS IN
+
+defn main () :
+   circuit c : DecoupledGCD
+   println(c)
+   
+main()

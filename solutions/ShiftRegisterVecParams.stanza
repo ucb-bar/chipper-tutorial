@@ -1,0 +1,58 @@
+#include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage shift-register :
+   import core
+   import verse
+   import chipper
+   import tester
+
+defmodule ShiftRegisterVecParams (w:Int, num:Int) :
+  input ins: UInt<w>[num]
+  input load: UInt<1>
+  input shift: UInt<1>
+  output out: UInt<w>
+
+  reg delays: UInt<w>[num]
+  when load :
+    for i in 0 to num do :
+      delays[i] := ins[i]
+  else when shift :
+    delays[0] := ins[0]
+    for i in 1 to num do :
+      delays[i] := delays[i - 1]
+  out := delays[num - 1]    
+
+defn shift-register-tests (w:Int, num:Int) :
+  with-tester [t, c] = ShiftRegisterVecParams(w,num) :
+    val r   = Array<Int>(4, 0)
+    val ins = Array<Int>(4, 0)
+    for n in 0 to 16 all? :
+      for i in 0 to num do :
+        ins[i] = rand(1 << w)
+      val shift = rand(2)
+      val load  = if n == 0: 1 else: rand(2)
+      for i in 0 to num do :
+        poke(t, c.ins[i], ins[i])
+      poke(t, c.load,  load)
+      poke(t, c.shift, shift)
+      step(t)
+      if load == 1 :
+        for i in 0 to num do :
+          r[i] = ins[i]
+      else if shift == 1 :
+        for i in (num - 1) to 0 by -1 do :
+          r[i] = r[i - 1]
+        r[0] = ins[0]
+      expect(t, c.out, r[3])
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     if shift-register-tests(4, 4): 0 else: -1
+   else :
+     circuit c : ShiftRegisterVecParams(4,4)
+     println(c)
+   
+main(commandline-arguments())

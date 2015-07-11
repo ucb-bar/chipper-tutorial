@@ -1,0 +1,41 @@
+#include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
+#include("../chipper/src/stdlib.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage maxn :
+   import core
+   import verse
+   import chipper
+   import tester
+   import stdlib
+
+defmodule MaxN (n:Int, w:Int) :
+  input ins : UInt<w>[n]
+  output out : UInt<w>
+  defn Max2 (x:UInt, y:UInt) :
+    mux(x > y, x, y)
+  out := reduce(Max2, ins)
+
+defn max-n-tests (n:Int, w:Int) :
+  with-tester [t, c] = MaxN(n,w) :
+    val ins = Array<Int>(n, 0)
+    for i in 0 to 16 all? :
+      var mx = 0
+      for j in 0 to n do :
+        ins[j] = rand(1 << w)
+        poke(t, c.ins[j], ins[j])
+        mx = if ins[j] > mx: ins[j] else: mx
+      step(t)
+      expect(t, c.out, mx)
+
+defn main (args) :
+   val [n,w] = [8,16]
+   if length(args) > 1 and args[1] == "--testing" :
+     max-n-tests(n,w)
+   else :
+     circuit c : MaxN(n,w)
+     println(c)
+   
+main(commandline-arguments())
