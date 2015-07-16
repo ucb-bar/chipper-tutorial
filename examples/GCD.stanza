@@ -1,5 +1,5 @@
-#include("src/use-chipper.stanza")
-#include("src/use-tester.stanza")
+#include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
 
 #use-syntax(core, chipper)
 
@@ -29,20 +29,24 @@ defmodule GCD :
    v := y === UInt(0)
 
 defn gcd-tests () :
+  defn gcd (a:Int, b:Int) -> Int :
+    if b == 0: a else: gcd(b, a % b)
   with-tester [t, c] = GCD() :
-    val [a, b, z] = [64, 48, 16]
-    rep loop () :
-      val first = if cycles(t) == 0: 1 else: 0
-      poke(t, c.a, a)
-      poke(t, c.b, b)
-      poke(t, c.e, first)
-      step(t)
-      if cycles(t) > 100 :
-        false
-      else if cycles(t) <= 1 or peek(t, c.v) == 0 :
-        loop()
-      else :
-        expect(t, c.z, z)
+    val n = 256
+    for i in 0 to 8 all? :
+      val [a, b] = [rand(2, n), rand(2, n)]
+      val z = gcd(a, b)
+      rep loop (j = 0) :
+        poke(t, c.a, a)
+        poke(t, c.b, b)
+        poke(t, c.e, int(j == 0))
+        step(t)
+        if j > n :
+          false
+        else if j <= 1 or peek(t, c.v) == 0 :
+          loop(j + 1)
+        else :
+          expect(t, c.z, z)
 
 defn main (args) :
    if length(args) > 1 and args[1] == "--testing" :

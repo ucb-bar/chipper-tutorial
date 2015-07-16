@@ -1,46 +1,70 @@
-#include("src/use-chipper.stanza")
-#include("src/stdlib.stanza")
-#include("src/decoupled.stanza")
+#include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
 
 #use-syntax(core, chipper)
 
-defpackage gcd :
+defpackage decoupled-gcd :
    import core
    import verse
    import chipper
    import stdlib
    import decoupled
+   import tester
 
 defmodule DecoupledGCD :
    input  a: DecoupledIO<UInt<16>>
    input  b: DecoupledIO<UInt<16>>
    output z: DecoupledIO<UInt<16>>
 
-   reg computing? = UInt(false)
+   reg computing = UInt(false)
    reg x: UInt<16>
    reg y: UInt<16>
 
-   a.ready := ! computing?
-   b.ready := ! computing?
+   a.ready := ! computing
+   b.ready := ! computing
    z.bits  := UInt(0)
    z.valid := UInt(false)
 
-   when computing? :
+   when computing :
      when x > y :
        x := x - y
      else :
        y := y - x
-     wire done?  = y === UInt(0)
-     computing? := ! done? | ! z.ready
-     z.bits     := x
-     z.valid    := done?
+     wire done = y === UInt(0)
+     computing := !(done) | !(z.ready)
+     z.bits    := x
+     z.valid   := done
    else when a.valid & b.valid :
      x := a.bits
      y := b.bits
-     computing? := UInt(true)
+     computing := UInt(true)
 
-defn main () :
-   circuit c : DecoupledGCD
-   println(c)
+defn decoupled-gcd-tests (n:Int) :
+  defn gcd (a:Int, b:Int) -> Int :
+    if b == 0: a else: gcd(b, a % b)
+  with-tester [t, c] = DecoupledGCD() :
+    val as = Source(t, c.a)
+    val bs = Source(t, c.b)
+    val zs = Sink(t, c.z)
+    add-ios(t, [as, bs, zs])
+    val ezs = Vector<Int>()
+    for i in 0 to n do :
+      val [a, b] = [rand(2, 256), rand(2, 256)]
+      add(ezs, gcd(a, b))
+      add(as, [a])
+      add(bs, [b])
+    while length(as) > 0 or length(bs) > 0 or length(zs) < length(ezs) :
+      step(t)
+    for i in 0 to length(ezs) all? :
+      val rz = pop(zs)
+      expect(rz[0] == ezs[i], ["Sum " ezs[i] " GOT " rz[0]])
+
+defn main (args) :
+   val n = 4
+   if length(args) > 1 and args[1] == "--testing" :
+     decoupled-gcd-tests(n)
+   else :
+     circuit c : DecoupledGCD()
+     println(c)
    
-main()
+main(commandline-arguments())

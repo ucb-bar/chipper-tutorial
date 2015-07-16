@@ -1,6 +1,4 @@
 #include("src/use-chipper.stanza")
-#include("src/stdlib.stanza")
-#include("src/decoupled.stanza")
 
 #use-syntax(core, chipper)
 
@@ -16,19 +14,41 @@ defmodule DecoupledGCD :
    input  b: DecoupledIO<UInt<16>>
    output z: DecoupledIO<UInt<16>>
 
-   reg computing? = UInt(false)
+   reg computing = UInt(false)
    reg x: UInt<16>
    reg y: UInt<16>
 
-   a.ready := ! computing?
-   b.ready := ! computing?
+   a.ready := !(computing)
+   b.ready := !(computing)
    z.bits  := UInt(0)
    z.valid := UInt(false)
 
    ;; FILL THIS IN
 
-defn main () :
-   circuit c : DecoupledGCD
-   println(c)
+defn decoupled-gcd-tests (n:Int) :
+  defn gcd (a:Int, b:Int) -> Int :
+    if b == 0: a else: gcd(b, a % b)
+  with-tester [t, c] = DecoupledGCD() :
+    val as = Source(t, c.a)
+    val bs = Source(t, c.b)
+    val zs = Sink(t, c.z)
+    add-ios(t, [as, bs, zs])
+    for i in 0 to 4 all? :
+      val [a, b] = [rand(2, 256), rand(2, 256)]
+      val z = gcd(a, b)
+      add(as, [a])
+      add(bs, [b])
+      while length(as) > 0 or length(bs) > 0 or length(zs) < 1 :
+        step(t)
+      val rz = pop(zs)
+      expect(rz[0] == z, ["Sum " z " GOT " rz[0]])
+
+defn main (args) :
+   val n = 16
+   if length(args) > 1 and args[1] == "--testing" :
+     decoupled-gcd-tests(n)
+   else :
+     circuit c : DecoupledGCD()
+     println(c)
    
-main()
+main(commandline-arguments())

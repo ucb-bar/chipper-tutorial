@@ -1,6 +1,5 @@
 #include("../src/use-chipper.stanza")
 #include("../src/use-tester.stanza")
-#include("../chipper/src/stdlib.stanza")
 
 #use-syntax(core, chipper)
 
