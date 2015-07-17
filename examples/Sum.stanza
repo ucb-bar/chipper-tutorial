@@ -1,0 +1,58 @@
+#use-syntax(core, chipper)
+
+defpackage sum :
+   import core
+   import verse
+   import chipper
+   import tester
+   import decoupled
+   import memory
+
+public defbundle SumReq  :
+  v   : UInt<32>
+  len : UInt<32>
+
+public defbundle SumResp  :
+  data : UInt<32>
+
+public defmodule Sum :
+  input  sreq: DecoupledIO<SumReq>
+  output srsp: DecoupledIO<SumResp>
+  input  mrsp: DecoupledIO<MemResp>
+  output mreq: DecoupledIO<MemReq>
+  reg a   : UInt<32>
+  reg ea  : UInt<32>
+  reg n   : UInt<32>
+  reg sum : UInt<32>
+  reg computing  = UInt(false)
+  mrsp.ready     := UInt(true)
+  sreq.ready     := UInt(true)
+  srsp.valid     := UInt(false)
+  srsp.bits.data := UInt(0)
+  mrsp.ready     := UInt(true)
+  mreq.bits.wr   := UInt(false)
+  mreq.bits.data := UInt(0)
+  mreq.bits.addr := UInt(0)
+  mreq.valid     := UInt(false)
+  mreq.bits.tag  := UInt(0)
+  when computing :
+    sreq.ready := UInt(false)
+    when mrsp.valid :
+      sum := sum + mrsp.bits.data
+      n   := n - UInt(1)
+    when a < ea :
+      mreq.valid := UInt(true)
+      mreq.bits.addr := a
+      when mreq.ready :
+        a := a + UInt(1)
+    else when n === UInt(0) :
+      srsp.valid := UInt(true)
+      srsp.bits.data := sum
+      when srsp.ready :
+        sum       := UInt(0)
+        computing := UInt(false)
+  else when sreq.valid :
+    a  := sreq.bits.v
+    ea := sreq.bits.v + sreq.bits.len
+    n  := sreq.bits.len
+    computing := UInt(true)

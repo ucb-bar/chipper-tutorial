@@ -1,0 +1,62 @@
+#include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
+#include("Memory.stanza")
+#include("Sum.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage sumsys :
+   import core
+   import verse
+   import chipper
+   import tester
+   import decoupled
+   import memory
+   import sum
+
+defmodule SumSys (n:Int) :
+  input  sreq: DecoupledIO<SumReq>
+  output srsp: DecoupledIO<SumResp>
+  input  mreq: DecoupledIO<MemReq>
+  output mrsp: DecoupledIO<MemResp>
+  inst sum   : Sum
+  inst mem   : Memory(n)
+  val [req, chosen] = arbiter([mreq, sum.mreq])
+  fan-out(chosen, mem.rsp, [mrsp, sum.mrsp])
+  mem.req     := req
+  srsp        := sum.srsp
+  sum.sreq    := sreq
+
+defn sum-sys-tests (n:Int) :
+  with-tester [t, c] = SumSys(n) :
+    val mreqs = Source(t, c.mreq)
+    val mrsps = Sink(t, c.mrsp)
+    val sreqs = Source(t, c.sreq)
+    val srsps = Sink(t, c.srsp)
+    add-ios(t, [mreqs, mrsps, sreqs, srsps])
+    for i in 0 to 4 all? :
+      val v = to-array(stream({ rand(256) }, 0 to (rand(n - 1) + 1)))
+      val r = reduce(plus, 0, v)
+      for (e in v, i in 0 to false) do :
+        add(mreqs, [1, i, i, e])
+      println-all(["WRITING VEC"])
+      while length(mreqs) > 0 or length(mrsps) < length(v) :
+        step(t)
+      clear(mrsps)
+      add(sreqs, [0, length(v)])
+      println-all(["DOING SUM"])
+      poke(t, c.mreq.valid, 0)
+      while length(sreqs) > 0 or length(srsps) < 1 :
+        step(t)
+      val srsp = to-array(pop(srsps))
+      expect(srsp[0] == r, ["Sum " r " GOT " srsp[0]])
+
+defn main (args) :
+   val n = 16
+   if length(args) > 1 and args[1] == "--testing" :
+     sum-sys-tests(n)
+   else :
+     circuit c : SumSys(n)
+     println(c)
+   
+main(commandline-arguments())

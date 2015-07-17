@@ -1,0 +1,57 @@
+#include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
+#include("Sum.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage sumcore :
+   import core
+   import verse
+   import chipper
+   import tester
+   import decoupled
+   import sum
+
+defmodule SumCore :
+  input  sreq: DecoupledIO<SumReq>
+  output srsp: DecoupledIO<SumResp>
+  input  mrsp: DecoupledIO<MemResp>
+  output mreq: DecoupledIO<MemReq>
+  inst sum : Sum
+  sum.sreq := sreq
+  srsp     := sum.srsp
+  mreq     := sum.mreq
+  sum.mrsp := mrsp
+
+defn sum-core-tests (n:Int) :
+  with-tester [t, c] = SumCore() :
+    val mrsps = Source(t, c.mrsp)
+    val mreqs = Sink(t, c.mreq)
+    val sreqs = Source(t, c.sreq)
+    val srsps = Sink(t, c.srsp)
+    add-ios(t, [mreqs, mrsps, sreqs, srsps])
+    for i in 0 to 10 all? :
+      val v = to-array(stream({ rand(256) }, 0 to (rand(n - 1) + 1)))
+      val r = reduce(plus, 0, v)
+      println-all(["VEC " v " -> " r])
+      add(sreqs, [0, length(v)])
+      while length(sreqs) > 0 or length(srsps) < 1 :
+        while length(mreqs) > 0 :
+          val mreq = pop(mreqs)
+          val [wr, tag, addr, data] = [mreq[0], mreq[1], mreq[2], mreq[3]]
+          if wr == 0 :
+            println-all(["HANDLING MEM READ " addr " -> " v[addr]])
+            add(mrsps, [tag, v[addr]])
+        step(t)
+      val srsp = pop(srsps)
+      expect(srsp[0] == r, ["Sum " r " GOT " srsp[0]])
+
+defn main (args) :
+   val n = 16
+   if length(args) > 1 and args[1] == "--testing" :
+     sum-core-tests(n)
+   else :
+     circuit c : SumCore()
+     println(c)
+   
+main(commandline-arguments())

@@ -1,0 +1,35 @@
+#use-syntax(core, chipper)
+
+defpackage memory :
+   import core
+   import verse
+   import chipper
+   import decoupled
+
+public defbundle MemReq :
+  wr   : UInt<1>
+  tag  : UInt<8>
+  addr : UInt<32>
+  data : UInt<32>
+
+public defbundle MemResp :
+  tag  : UInt<8>
+  data : UInt<32>
+
+public defmodule Memory (n: Int) :
+  input  req : DecoupledIO<MemReq>
+  output rsp : DecoupledIO<MemResp>
+  cmem mem : UInt<32>[n]
+  req.ready     := rsp.ready
+  rsp.valid     := UInt(false)
+  rsp.bits.data := UInt(0)
+  rsp.bits.tag  := UInt(0)
+  when req.valid :
+    rsp.valid    := UInt(true)
+    rsp.bits.tag := req.bits.tag
+    when req.bits.wr :
+      rsp.bits.data      := req.bits.data
+      mem[req.bits.addr] := req.bits.data
+    else :
+      rsp.bits.data := mem[req.bits.addr]
+
