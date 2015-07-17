@@ -1,0 +1,43 @@
+#include("../src/use-chipper.stanza")
+#include("../src/use-tester.stanza")
+
+#use-syntax(core, chipper)
+
+defpackage gcd :
+   import core
+   import verse
+   import chipper
+   import tester
+
+defmodule ByteSelector :
+   input in: UInt<32>
+   input off: UInt<2>
+   output out: UInt<8>
+
+   when off === UInt(0) :
+     out := in[7, 0]
+   else when off === UInt(1) :
+     out := in[15, 8]
+   else when off === UInt(2) :
+     out := in[23, 16]
+   else :
+     out := in[31, 24]
+
+defn byte-selector-tests () :
+  with-tester [t, c] = ByteSelector() :
+    for i in 0 to 8 all? :
+      val in  = rand(1 << 31)
+      val off = rand(4)
+      poke(t, c.in,  in)
+      poke(t, c.off, off)
+      step(t)
+      expect(t, c.out, (in >> (off * 8)) & 255)
+
+defn main (args) :
+   if length(args) > 1 and args[1] == "--testing" :
+     byte-selector-tests()
+   else :
+     circuit c : ByteSelector
+     println(c)
+   
+main(commandline-arguments())
